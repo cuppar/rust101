@@ -3,7 +3,7 @@
 
 // ## Big Numbers
 
-
+#[derive(Clone)]
 pub struct BigInt {
     pub data: Vec<u64>, // least significant digit first, no trailing zeros
 }
@@ -12,9 +12,9 @@ pub struct BigInt {
 impl BigInt {
     pub fn new(x: u64) -> Self {
         if x == 0 {
-            unimplemented!()
+            Self { data: vec![] }
         } else {
-            unimplemented!()
+            Self { data: vec![x] }
         }
     }
 
@@ -31,39 +31,92 @@ impl BigInt {
     // one in `let mut ...`: We completely own `v`, but Rust still asks us to make our intention of
     // modifying it explicit. This `mut` is *not* part of the type of `from_vec` - the caller has
     // to give up ownership of `v` anyway, so they don't care anymore what you do to it.
-    // 
+    //
     // **Exercise 05.1**: Implement this function.
-    // 
+    //
     // *Hint*: You can use `pop` to remove the last element of a vector.
     pub fn from_vec(mut v: Vec<u64>) -> Self {
-        unimplemented!()
+        if v.is_empty() {
+            return Self { data: vec![] };
+        }
+        while v[v.len() - 1] == 0 {
+            v.pop();
+        }
+        Self { data: v }
     }
 }
 
 // ## Cloning
 fn clone_demo() {
-    let v = vec![0,1 << 16];
-    let b1 = BigInt::from_vec((&v).clone());
+    let v = vec![0, 1 << 16];
+    let b1 = BigInt::from_vec(v.clone());
     let b2 = BigInt::from_vec(v);
 }
 
-impl Clone for BigInt {
-    fn clone(&self) -> Self {
-        unimplemented!()
-    }
-}
+// impl Clone for BigInt {
+//     fn clone(&self) -> Self {
+//         Self {
+//             data: self.data.clone(),
+//         }
+//     }
+// }
 
 // We can also make the type `SomethingOrNothing<T>` implement `Clone`.
-use part02::{SomethingOrNothing,Something,Nothing};
+use part02::{Nothing, Something, SomethingOrNothing};
 impl<T: Clone> Clone for SomethingOrNothing<T> {
     fn clone(&self) -> Self {
-        unimplemented!()
+        match self {
+            Something(v) => Something(v.clone()),
+            Nothing => Nothing,
+        }
     }
 }
 
 // **Exercise 05.2**: Write some more functions on `BigInt`. What about a function that returns the
 // number of digits? The number of non-zero digits? The smallest/largest digit? Of course, these
 // should all take `self` as a shared reference (i.e., in borrowed form).
+
+impl BigInt {
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn non_zero_digits(&self) -> usize {
+        let mut count = 0;
+        for e in self.data.iter() {
+            if *e != 0 {
+                count += 1;
+            }
+        }
+        count
+    }
+
+    pub fn smallest(&self) -> Option<u64> {
+        if self.data.is_empty() {
+            return None;
+        }
+        let mut min = self.data[0];
+        for e in self.data.iter() {
+            if *e < min {
+                min = *e;
+            }
+        }
+        Some(min)
+    }
+
+    pub fn largest(&self) -> Option<u64> {
+        if self.data.is_empty() {
+            return None;
+        }
+        let mut max = self.data[0];
+        for e in self.data.iter() {
+            if *e > max {
+                max = *e;
+            }
+        }
+        Some(max)
+    }
+}
 
 // ## Mutation + aliasing considered harmful (part 2)
 enum Variant {
@@ -76,7 +129,7 @@ fn work_on_variant(mut var: Variant, text: String) {
         Variant::Number(ref mut n) => ptr = n,
         Variant::Text(_) => return,
     }
-    /* var = Variant::Text(text); */                                /* BAD! */
+    /* var = Variant::Text(text); */
+    /* BAD! */
     *ptr = 1337;
 }
-

@@ -13,7 +13,7 @@ pub fn vec_min<T: Minimum>(v: &Vec<T>) -> Option<&T> {
     for e in v {
         min = Some(match min {
             None => e,
-            Some(n) => n.min(e)
+            Some(n) => n.min(e),
         });
     }
     min
@@ -24,7 +24,21 @@ pub fn vec_min<T: Minimum>(v: &Vec<T>) -> Option<&T> {
 // exercise 06.1. You should *not* make any copies of `BigInt`!
 impl Minimum for BigInt {
     fn min<'a>(&'a self, other: &'a Self) -> &'a Self {
-        unimplemented!()
+        debug_assert!(self.test_invariant() && other.test_invariant());
+        if self.data.len() < other.data.len() {
+            self
+        } else if self.data.len() > other.data.len() {
+            other
+        } else {
+            for i in (self.data.len() - 1)..=0 {
+                if self.data[i] < other.data[i] {
+                    return self;
+                } else if self.data[i] > other.data[i] {
+                    return other;
+                }
+            }
+            self
+        }
     }
 }
 
@@ -34,17 +48,21 @@ impl PartialEq for BigInt {
     #[inline]
     fn eq(&self, other: &BigInt) -> bool {
         debug_assert!(self.test_invariant() && other.test_invariant());
-        unimplemented!()
+        self.data == other.data
     }
 }
-
 
 // Now we can compare `BigInt`s. Rust treats `PartialEq` special in that it is wired to the operator
 // `==`:
 fn compare_big_ints() {
     let b1 = BigInt::new(13);
     let b2 = BigInt::new(37);
-    println!("b1 == b1: {} ; b1 == b2: {}; b1 != b2: {}", b1 == b1, b1 == b2, b1 != b2);
+    println!(
+        "b1 == b1: {} ; b1 == b2: {}; b1 != b2: {}",
+        b1 == b1,
+        b1 == b2,
+        b1 != b2
+    );
 }
 
 // ## Testing
@@ -55,7 +73,9 @@ fn test_min() {
     let b2 = BigInt::new(42);
     let b3 = BigInt::from_vec(vec![0, 1]);
 
-    unimplemented!()
+    assert!(*b1.min(&b2) == b1);
+    assert!(*b3.min(&b2) == b2);
+    assert_eq!(*b1.min(&b2), b1);
 }
 // Now run `cargo test` to execute the test. If you implemented `min` correctly, it should all work!
 
@@ -72,7 +92,7 @@ impl fmt::Debug for BigInt {
 }
 
 // Now we are ready to use `assert_eq!` to test `vec_min`.
-/*#[test]*/
+#[test]
 fn test_vec_min() {
     let b1 = BigInt::new(1);
     let b2 = BigInt::new(42);
@@ -80,7 +100,12 @@ fn test_vec_min() {
 
     let v1 = vec![b2.clone(), b1.clone(), b3.clone()];
     let v2 = vec![b2.clone(), b3.clone()];
-    unimplemented!()
+    assert_eq!(vec_min(&v1), Some(&b1));
+    assert_eq!(vec_min(&v2), Some(&b2));
+    assert_eq!(vec_min(&Vec::<BigInt>::new()), None);
+    let b4 = BigInt::from_vec(vec![1, 2, 0, 0]);
+    let b5 = BigInt::from_vec(vec![1, 2]);
+    assert_eq!(b4, b5);
 }
 
 // **Exercise 07.1**: Add some more testcases. In particular, make sure you test the behavior of
@@ -91,4 +116,3 @@ fn test_vec_min() {
 // (This will, of course, need a `Display` bound on `T`.) Then you should be able to use them with
 // `println!` just like you do with numbers, and get rid of the inherent functions to print
 // `SomethingOrNothing<i32>` and `SomethingOrNothing<f32>`.
-

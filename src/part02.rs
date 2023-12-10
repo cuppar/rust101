@@ -7,6 +7,8 @@ pub enum SomethingOrNothing<T> {
     Something(T),
     Nothing,
 }
+use std::fmt::Display;
+
 // Instead of writing out all the variants, we can also just import them all at once.
 pub use self::SomethingOrNothing::*;
 // type NumberOrNothing = SomethingOrNothing<i32>;
@@ -74,6 +76,15 @@ impl SomethingOrNothing<i32> {
     }
 }
 
+impl<T: Display> Display for SomethingOrNothing<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Something(s) => write!(f, "Something({})", s),
+            Nothing => write!(f, "Nothing"),
+        }
+    }
+}
+
 // Now we are ready to run our new code. Remember to change `main.rs` appropriately.
 fn read_vec() -> Vec<i32> {
     vec![18, 5, 7, 3, 9, 27]
@@ -82,10 +93,11 @@ fn read_vec() -> Vec<i32> {
 fn read_vec_f() -> Vec<f32> {
     vec![18., 5., 7., 3.1, 9., 27.]
 }
+
 pub fn main() {
     let vec = read_vec_f();
     let min = vec_min(vec);
-    min.print();
+    println!("{min}");
 }
 
 // **Exercise 02.1**: Change your program such that it computes the minimum of a `Vec<f32>` (where
@@ -93,15 +105,6 @@ pub fn main() {
 // way, obviously!
 
 type FloatOrNothing = SomethingOrNothing<f32>;
-
-impl FloatOrNothing {
-    pub fn print(self) {
-        match self {
-            Something(f) => println!("The float is: {}", f),
-            Nothing => println!("The float is: <nothing>"),
-        }
-    }
-}
 
 impl Minimum for f32 {
     fn min(self, b: Self) -> Self {

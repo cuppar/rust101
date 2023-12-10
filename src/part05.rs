@@ -22,7 +22,7 @@ impl BigInt {
         if self.data.len() == 0 {
             true
         } else {
-            unimplemented!()
+            self.data[self.data.len() - 1] != 0
         }
     }
 

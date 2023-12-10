@@ -43,7 +43,8 @@ use part02::{vec_min, Nothing, Something, SomethingOrNothing};
 pub fn main() {
     let vec = read_vec::<i32>();
     let min = vec_min(vec);
-    min.print2();
+    // min.print2();
+    println!("{min}");
 }
 
 // **Exercise 03.1**: The goal is to write a generic version of `SomethingOrNothing::print`.

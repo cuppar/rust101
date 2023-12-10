@@ -95,7 +95,7 @@ pub fn main() {
 type FloatOrNothing = SomethingOrNothing<f32>;
 
 impl FloatOrNothing {
-    fn print(self) {
+    pub fn print(self) {
         match self {
             Something(f) => println!("The float is: {}", f),
             Nothing => println!("The float is: <nothing>"),

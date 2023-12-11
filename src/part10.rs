@@ -1,9 +1,8 @@
 // Rust-101, Part 10: Closures
 // ===========================
 
-use std::fmt;
 use part05::BigInt;
-
+use std::fmt;
 
 // So, let us define a trait that demands that the type provides some method `do_action` on digits.
 trait Action {
@@ -15,7 +14,7 @@ trait Action {
 impl BigInt {
     fn act_v1<A: Action>(&self, mut a: A) {
         for digit in self {
-            unimplemented!()
+            a.do_action(digit);
         }
     }
 }
@@ -28,7 +27,7 @@ impl Action for PrintWithString {
     // Here we perform the actual printing of the prefix and the digit. We're not making use of our
     // ability to change `self` here, but we could replace the prefix if we wanted.
     fn do_action(&mut self, digit: u64) {
-        unimplemented!()
+        println!("{}{}", self.prefix, digit);
     }
 }
 
@@ -42,7 +41,9 @@ fn print_with_prefix_v1(b: &BigInt, prefix: String) {
 // to run it.
 pub fn main() {
     let bignum = BigInt::new(1 << 63) + BigInt::new(1 << 16) + BigInt::new(1 << 63);
-    print_with_prefix_v1(&bignum, "Digit: ".to_string());
+    // print_with_prefix_v1(&bignum, "Digit: ".to_string());
+    print_with_prefix(&bignum, "Digit: ".to_string());
+    print_and_count(&bignum);
 }
 
 // ## Closures
@@ -54,7 +55,7 @@ impl BigInt {
         for digit in self {
             // We can call closures as if they were functions - but really, what's happening here
             // is translated to essentially what we wrote above, in `act_v1`.
-            unimplemented!()
+            a(digit)
         }
     }
 }
@@ -62,7 +63,7 @@ impl BigInt {
 // Now that we saw how to write a function that operates on closures, let's see how to write a
 // closure.
 pub fn print_with_prefix(b: &BigInt, prefix: String) {
-    b.act(|digit| println!("{}{}", prefix, digit) );
+    b.act(|digit| println!("{}{}", prefix, digit));
 }
 // You can change `main` to call this function, and you should notice - nothing, no difference in
 // behavior. But we wrote much less boilerplate code!
@@ -71,7 +72,10 @@ pub fn print_with_prefix(b: &BigInt, prefix: String) {
 // mutate its environment. For example, we can use that to count the digits as they are printed.
 pub fn print_and_count(b: &BigInt) {
     let mut count: usize = 0;
-    b.act(|digit| { println!("{}: {}", count, digit); count = count +1; } );
+    b.act(|digit| {
+        println!("{}: {}", count, digit);
+        count = count + 1;
+    });
     println!("There are {} digits", count);
 }
 
@@ -95,7 +99,7 @@ fn print_enumerated<T: fmt::Display>(v: &Vec<T>) {
 
 // And as a final example, one can also collect all elements of an iterator, and put them, e.g., in a vector.
 fn filter_vec_by_divisor(v: &Vec<i32>, divisor: i32) -> Vec<i32> {
-    unimplemented!()
+    v.iter().map(|n| *n).filter(|n| *n % divisor == 0).collect()
 }
 
 // **Exercise 10.1**: Look up the
@@ -105,6 +109,30 @@ fn filter_vec_by_divisor(v: &Vec<i32>, divisor: i32) -> Vec<i32> {
 // those numbers that sit at odd positions? A function that checks whether a vector contains a
 // certain number? Whether all numbers are smaller than some threshold? Be creative!
 
+#[test]
+fn t() {
+    let v = vec![1, 2, 3];
+    let mut iter = v.iter();
+    assert_eq!(iter.nth(0), Some(&1));
+    assert_eq!(iter.nth(0), Some(&2));
+    assert_eq!(iter.nth(0), Some(&3));
+    assert_eq!(iter.nth(0), None);
+    assert_eq!((0..10).into_iter().filter(|n| *n % 2 == 0).sum::<i32>(), 20);
+    assert_eq!(
+        (0..10)
+            .into_iter()
+            .enumerate()
+            .filter(|(p, n)| p % 2 != 0)
+            .map(|(_, n)| n)
+            .reduce(|a, b| a * b),
+        Some(3 * 5 * 7 * 9)
+    );
+    assert!(v.iter().filter(|&&n| n == 2).count() == 1);
+    assert!(v.iter().all(|n| *n < 10));
+    let s = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+    assert!(s.iter().all(|n| n.len() == 1));
+}
+
 // **Exercise 10.2**: We started the journey in Part 02 with `SomethingOrNothing<T>`, and later
 // learned about `Option<T>` in Part 04. `Option<T>` also has a `map` function.
 // [Read its documentation here.](https://doc.rust-lang.org/stable/std/option/enum.Option.html#method.map)
@@ -112,4 +140,3 @@ fn filter_vec_by_divisor(v: &Vec<i32>, divisor: i32) -> Vec<i32> {
 // (Hint: read the source code of `map`, and see if the pattern appears in your own code.)
 // Bonus: [`test_invariant` in Part 05](part05.html#section-6) doesn't use `match`,
 // but can you still find a way to rewrite it with `map`?
-

@@ -19,11 +19,12 @@ impl BigInt {
     }
 
     pub fn test_invariant(&self) -> bool {
-        if self.data.len() == 0 {
-            true
-        } else {
-            self.data[self.data.len() - 1] != 0
-        }
+        // if self.data.len() == 0 {
+        //     true
+        // } else {
+        //     self.data[self.data.len() - 1] != 0
+        // }
+        self.data.iter().last().map(|n| *n != 0).unwrap_or(true)
     }
 
     // We can convert any little-endian vector of digits (i.e., least-significant digit first) into

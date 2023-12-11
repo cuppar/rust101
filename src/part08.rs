@@ -2,7 +2,7 @@
 // ============================================
 
 use part05::BigInt;
-use std::{cmp, ops};
+use std::{cmp, ops, result};
 
 // So, let us write a function to "add with carry", and give it the appropriate type. Notice Rust's
 // native support for pairs.
@@ -119,8 +119,8 @@ impl ops::Add<BigInt> for &BigInt {
 // a submodule as follows.
 #[cfg(test)]
 mod tests {
-    use part05::BigInt;
     use super::*;
+    use part05::BigInt;
 
     #[test]
     fn test_add() {
@@ -154,8 +154,95 @@ mod part00;
 // or to return `0`.
 
 impl ops::Sub for BigInt {
-    type Output = BigInt;
+    type Output = Option<BigInt>;
     fn sub(self, rhs: Self) -> Self::Output {
-        
+        &self - &rhs
     }
+}
+impl ops::Sub<BigInt> for &BigInt {
+    type Output = Option<BigInt>;
+    fn sub(self, rhs: BigInt) -> Self::Output {
+        self - &rhs
+    }
+}
+impl ops::Sub<&BigInt> for BigInt {
+    type Output = Option<BigInt>;
+    fn sub(self, rhs: &BigInt) -> Self::Output {
+        &self - rhs
+    }
+}
+
+impl ops::Sub<&BigInt> for &BigInt {
+    type Output = Option<BigInt>;
+    fn sub(self, rhs: &BigInt) -> Self::Output {
+        if rhs.data.len() > self.data.len() {
+            return None;
+        }
+        let mut carry = false;
+        let mut result_vec = Vec::with_capacity(self.data.len());
+        for i in 0..self.data.len() {
+            let lhs_val = self.data[i];
+            let rhs_val = if i < rhs.data.len() { rhs.data[i] } else { 0 };
+
+            let (diff, new_carry) = overflow_sub(lhs_val, rhs_val, carry);
+            result_vec.push(diff);
+            carry = new_carry;
+        }
+        if carry {
+            return None;
+        }
+        Some(BigInt::from_vec(result_vec))
+    }
+}
+
+fn overflow_sub(a: u64, b: u64, carry: bool) -> (u64, bool) {
+    let diff = a.wrapping_sub(b);
+    if diff <= a {
+        // no overflow
+        if carry {
+            let diff2 = diff.wrapping_sub(1);
+            if diff2 <= diff {
+                // no overflow
+                (diff2, false)
+            } else {
+                // overflow
+                (diff2, true)
+            }
+        } else {
+            (diff, false)
+        }
+    } else {
+        // overflow
+        (diff - if carry { 1 } else { 0 }, true)
+    }
+}
+
+#[test]
+fn test_overflowing_sub() {
+    assert_eq!(overflow_sub(3, 2, false), (1, false));
+    assert_eq!(overflow_sub(3, 2, true), (0, false));
+    assert_eq!(overflow_sub(3, 3, false), (0, false));
+    assert_eq!(overflow_sub(3, 3, true), ((1 << 63) - 1 + (1 << 63), true));
+}
+
+#[test]
+fn test_sub() {
+    let max = (1 << 63) - 1 + (1 << 63);
+    let b1 = BigInt::from_vec(vec![0, 0, 1]);
+    let b2 = BigInt::from_vec(vec![1]);
+    assert_eq!(
+        b1.clone() - b2.clone(),
+        Some(BigInt::from_vec(vec![max, max]))
+    );
+    assert_eq!(b1.clone() - &b2, Some(BigInt::from_vec(vec![max, max])));
+    assert_eq!(&b1 - b2.clone(), Some(BigInt::from_vec(vec![max, max])));
+    assert_eq!(b1 - b2, Some(BigInt::from_vec(vec![max, max])));
+
+    let b3 = BigInt::from_vec(vec![1, 1]);
+    let b4 = BigInt::from_vec(vec![1]);
+    let b5 = BigInt::from_vec(vec![0]);
+    let b6 = BigInt::from_vec(vec![1,2]);
+    assert_eq!(&b3 - &b4, Some(BigInt::from_vec(vec![0, 1])));
+    assert_eq!(&b3 - &b5, Some(BigInt::from_vec(vec![1, 1])));
+    assert_eq!(&b3 - &b6, None);
 }

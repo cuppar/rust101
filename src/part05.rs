@@ -39,7 +39,7 @@ impl BigInt {
         if v.is_empty() {
             return Self { data: vec![] };
         }
-        while v[v.len() - 1] == 0 {
+        while !v.is_empty() && v[v.len() - 1] == 0 {
             v.pop();
         }
         Self { data: v }

@@ -77,3 +77,17 @@ pub fn main() {
 // data structures above to work with an arbitrary type `T` that's passed to the callbacks. Since
 // you need to call multiple callbacks with the same `val: T` (in our `call` function), you will
 // either have to restrict `T` to `Copy` types, or pass a reference.
+
+trait A {
+    fn f(&self) {}
+}
+
+impl A for i32 {
+    fn f(&self) {}
+}
+
+#[test]
+fn t() {
+    let a = 0;
+    let to = &a as &dyn A;
+}

@@ -1,11 +1,12 @@
 // Rust-101, Part 14: Slices, Arrays, External Dependencies
 // ========================================================
 
-
 // ## Slices
 
 pub fn sort<T: PartialOrd>(data: &mut [T]) {
-    if data.len() < 2 { return; }
+    if data.len() < 2 {
+        return;
+    }
 
     // We decide that the element at 0 is our pivot, and then we move our cursors through the rest
     // of the slice, making sure that everything on the left is no larger than the pivot, and
@@ -13,20 +14,48 @@ pub fn sort<T: PartialOrd>(data: &mut [T]) {
     let mut lpos = 1;
     let mut rpos = data.len();
     /* Invariant: pivot is data[0]; everything with index (0,lpos) is <= pivot;
-       [rpos,len) is >= pivot; lpos < rpos */
+    [rpos,len) is >= pivot; lpos < rpos */
     loop {
         // **Exercise 14.1**: Complete this Quicksort loop. You can use `swap` on slices to swap
         // two elements. Write a test function for `sort`.
-        unimplemented!()
+        if lpos == rpos {
+            break;
+        }
+        if data[lpos] <= data[0] {
+            lpos += 1;
+        } else {
+            loop {
+                rpos -= 1;
+                if lpos == rpos {
+                    break;
+                }
+                if data[rpos] < data[0] {
+                    data.swap(lpos, rpos);
+                    lpos += 1;
+                    break;
+                }
+            }
+        }
     }
 
     // Once our cursors met, we need to put the pivot in the right place.
-    data.swap(0, lpos-1);
+    data.swap(0, lpos - 1);
 
     // Finally, we split our slice to sort the two halves. The nice part about slices is that
     // splitting them is cheap:
     let (part1, part2) = data.split_at_mut(lpos);
-    unimplemented!()
+    sort(&mut part1[..lpos - 1]);
+    sort(part2);
+}
+
+#[test]
+fn test_sort() {
+    let mut v = vec![4, 1, 7, 3, 2, 9];
+    let mut v2 = vec![9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+    sort(&mut v);
+    sort(&mut v2);
+    assert_eq!(v, vec![1, 2, 3, 4, 7, 9]);
+    assert_eq!(v2, vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 
 // **Exercise 14.2**: Since `String` implements `PartialEq`, you can now change the function
@@ -47,10 +76,9 @@ fn sort_array() {
 
 // ## External Dependencies
 
-
 // I disabled the following module (using a rather bad hack), because it only compiles if `docopt`
 // is linked. Remove the attribute of the `rgrep` module to enable compilation.
-#[cfg(feature = "disabled")]
+// #[cfg(feature = "disabled")]
 pub mod rgrep {
     // Now that `docopt` is linked, we can first add it to the namespace with `extern crate` and
     // then import shorter names with `use`. We also import some other pieces that we will need.
@@ -62,23 +90,27 @@ pub mod rgrep {
     // The `USAGE` string documents how the program is to be called. It's written in a format that
     // `docopt` can parse.
     static USAGE: &'static str = "
-Usage: rgrep [-c] [-s] <pattern> <file>...
+Usage: rgrep [-c] [-s] [-r] <pattern> <file>...
 
 Options:
     -c, --count  Count number of matching lines (rather than printing them).
     -s, --sort   Sort the lines before printing.
+    -r, --regex  Using regexp to matching.
 ";
 
     // This function extracts the rgrep options from the command-line arguments.
     fn get_options() -> Options {
         // This parses `argv` and exit the program with an error message if it fails. The code is
         // taken from the [`docopt` documentation](http://burntsushi.net/rustdoc/docopt/). <br/>
-        let args = Docopt::new(USAGE).and_then(|d| d.parse()).unwrap_or_else(|e| e.exit());
+        let args = Docopt::new(USAGE)
+            .and_then(|d| d.parse())
+            .unwrap_or_else(|e| e.exit());
         // Now we can get all the values out.
         let count = args.get_bool("-c");
         let sort = args.get_bool("-s");
         let pattern = args.get_str("<pattern>");
         let files = args.get_vec("<file>");
+        let regex = args.get_bool("-r");
         if count && sort {
             println!("Setting both '-c' and '-s' at the same time does not make any sense.");
             process::exit(1);
@@ -96,6 +128,7 @@ Options:
             files: files.iter().map(|file| file.to_string()).collect(),
             pattern: pattern.to_string(),
             output_mode: mode,
+            regex,
         }
     }
 
@@ -104,7 +137,7 @@ Options:
     // You can now use `cargo run -- <pattern> <files>` to call your program, and see the argument
     // parser and the threads we wrote previously in action!
     pub fn main() {
-        unimplemented!()
+        run(get_options());
     }
 }
 
@@ -115,4 +148,3 @@ Options:
 // to honor this option. The documentation of regex is available from its crates.io site.
 // (You won't be able to use the `regex!` macro if you are on the stable or beta channel of Rust.
 // But it wouldn't help for our use-case anyway.)
-

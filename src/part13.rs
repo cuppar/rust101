@@ -1,6 +1,9 @@
 // Rust-101, Part 13: Concurrency, Arc, Send
 // =========================================
 
+extern crate regex;
+
+use self::regex::Regex;
 use std::io::prelude::*;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::Arc;
@@ -15,12 +18,15 @@ pub enum OutputMode {
     SortAndPrint,
     Count,
 }
+use crate::part14::sort;
+
 use self::OutputMode::*;
 
 pub struct Options {
     pub files: Vec<String>,
     pub pattern: String,
     pub output_mode: OutputMode,
+    pub regex: bool,
 }
 
 struct LineInfo {
@@ -63,7 +69,14 @@ fn filter_lines(
         // `contains` works on lots of types of patterns, but in particular, we can use it to test
         // whether one string is contained in another. This is another example of Rust using traits
         // as substitute for overloading.
-        if line_info.text.contains(&options.pattern) {
+
+        if options.regex {
+            let re = Regex::new(format!(r"{}", options.pattern).as_str()).unwrap();
+
+            if re.is_match(&line_info.text) {
+                out_channel.send(line_info).unwrap();
+            }
+        } else if line_info.text.contains(&options.pattern) {
             out_channel.send(line_info).unwrap();
         }
     }
@@ -137,6 +150,7 @@ pub fn main() {
         ],
         pattern: "let".to_string(),
         output_mode: Print,
+        regex: false,
     };
     run(options);
 }
